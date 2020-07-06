@@ -20,6 +20,7 @@
             // RTCConfiguration.peerIdentity 타겟 피어 identity를 명시하는 DOMString. 이 값이 지정되어있으면, RTCPeerConnection은 주어진 이름으로 인증이 성공하지 않는 이상 원격 피어와 연결하지 않습니다.
             // RTCConfiguration.rtcpMuxPolicy non-multiplexed RTCP를 지원하기 위해, ICE candidate를 수집 할 때 사용되는 RTCP mux 정책. 이 값은 RTCRtcpMuxPolicy enum.에 존재하는 값입니다. 기본 값은 "require"입니다.
             var auth = null
+            
             RTCPeerConnection.generateCertificate({
                 name: 'RSASSA-PKCS1-v1_5',
                 hash: 'SHA-256',
@@ -28,6 +29,7 @@
             }).then(function(cert) {
                 auth = cert
             });
+
             var conn = new RTCPeerConnection([{
                 bundlePolicy: 'balanced',
                 certificates: auth,
@@ -47,6 +49,60 @@
                 rtcpMuxPolicy: 'require'
             }])
 
+            // [메소드]
+            // addIceCandidate(candidate)
+            // 을 사용하는 웹이나 앱이 신규 ICE candidate를 signaling 채널을 통해 원격 유저로부터 수신하게되면, 
+            // RTCPeerConnection.addIceCandidate()를 호출해서 브라우저의 ICE 에이전트에게 새로 수신한 candidate를 전달합니다.  
+            // RTCIceCandidate 인터페이스는 WebRTC API의 한 종류로서, RTCPeerConnection을 구축 할 때 사용되기도하는 
+            // Internet Connectivity Establishment (ICE)의 후보군 (candidate)를 말합니다.
+            conn.addIceCandidate();
+
+            // addTrack(track, stream...); 
+            // track 피어 연결에 추가될 미디어 트랙을 나타내는 MediaStreamTrack 객체입니다.
+            // stream 트랙이 추가 되어야하는 하나 혹은 여러개의 로컬 MediaStream 객체입니다.
+            async function openCall() {
+                const gumStream = await navigator.mediaDevices.getUserMedia(
+                            {video: true, audio: true});
+                for (const track of gumStream.getTracks()) {
+                    // 스트림을 따로 지정하지 않고, 트랙을 추가
+                    conn.addTrack(track);
+                }
+            }
+
+            // close() 메소드로 피어 연결을 종료합니다.
+            //conn.close()
+
+            // createAnswer([options]) 메소드는 WebRTC 연결 중 발생하는 offer/answer 네고시에이션에서 원격 유저로부터 받은 offer에 대한 SDP answer를 생성합니다.
+            var options = {
+                voiceActivityDetection: true
+            };
+            conn.createAnswer(options)
+
+            // createDataChannel(label,[ options]);
+            // 어떤 형식의 데이터든 송신 할 수 있도록 원격 유저와 연결하는 신규 채널을 생성합니다.
+            // 이 방법은 이미지, 파일 전송, 문자 채팅, 게임 패킷 업데이트 등과 같은 백채널 컨텐츠에 유용하게 사용 가능합니다.
+            var send_pc = new RTCPeerConnection(options);
+            var send_channel = send_pc.createDataChannel("chat");
+            send_channel.onopen = function(event) {
+                send_channel.send('Hi you!');
+            }
+            send_channel.onmessage = function(event) {
+                send_channel.log(event.data);
+            }
+
+            var rcv_pc = new RTCPeerConnection(options);
+            rcv_pc.ondatachannel = function(event) {
+                var rcv_channel = event.channel;
+                ﻿  rcv_channel.onopen = function(event) {
+                    rcv_channel.send('Hi back!');
+                }
+                channel.onmessage = function(event) {
+                    rcv_channel.log(event.data);
+                }
+            }
+
+            // createOffer() 
+            // interface initiates the creation of an SDP offer for the purpose of starting a new WebRTC connection to a remote peer.
         </script>
     </body>
 </hrml>
