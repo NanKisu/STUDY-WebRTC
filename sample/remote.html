@@ -1,0 +1,25 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <script>
+            localStorage.setItem('remoteSession', '');
+
+            remotePeer = new RTCPeerConnection();
+            remotePeer.ondatachannel = function() {
+				console.log("ondatachannel");
+			};
+
+            function step2() {
+                console.log(localStorage.getItem('localSession'))
+                remotePeer.setRemoteDescription(new RTCSessionDescription(JSON.parse(localStorage.getItem('localSession'))))
+                remotePeer.createAnswer()
+                    .then((remoteSession) => remotePeer.setLocalDescription(remoteSession))
+                    .then(() => localStorage.setItem('remoteSession', JSON.stringify(remotePeer.localDescription)))
+                    .catch(e => console.log(e));
+                console.log('step2 END');
+            }
+        </script>
+    </body>
+</html>
+
