@@ -1,0 +1,36 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <script>
+            localStorage.setItem('localSession', '');
+
+            var localPeer = new RTCPeerConnection();
+            var localDataChannel = localPeer.createDataChannel('localDataChannel');
+            localDataChannel.onerror = function(error) {
+				console.log("Error:", error);
+			};
+			localDataChannel.onclose = function() {
+				console.log("Data channel is closed");
+			};
+			localDataChannel.onopen = function(){
+				console.log("Data channel is open");
+			}
+
+            function step1() {
+                localPeer.createOffer()
+                    .then((offer) => localPeer.setLocalDescription(offer))
+                    .then((offer) => localStorage.setItem('localSession', JSON.stringify(localPeer.localDescription)))
+                    .catch(e => console.log(e));
+                console.log("step1 END");
+            }
+
+            function step3() {
+                console.log(localStorage.getItem('remoteSession'))
+                localPeer.setRemoteDescription(new RTCSessionDescription(JSON.parse(localStorage.getItem('remoteSession'))))
+                console.log("step3 END");
+            }
+        </script>
+    </body>
+</html>
+
